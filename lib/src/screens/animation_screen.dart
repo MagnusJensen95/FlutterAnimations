@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:GriderAnimations/src/widgets/cat.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,11 @@ class AnimationScreenState extends State<AnimationScreen>
   Animation<double> catAnimation;
   AnimationController catController;
 
+  Animation<double> boxAnimation;
+  AnimationController boxController;
+
   animateCat() {
+    boxController.forward();
     if (catController.status == AnimationStatus.completed) {
       catController.reverse();
     } else {
@@ -19,22 +25,83 @@ class AnimationScreenState extends State<AnimationScreen>
     }
   }
 
+  double piToDegrees(int degrees) {
+    return (pi / 180) * degrees;
+  }
+
   initState() {
     super.initState();
 
+    boxController = AnimationController(
+      vsync: this,
+      duration: Duration(
+        milliseconds: 2000,
+      ),
+    );
+
+    boxAnimation = Tween(begin: piToDegrees(120), end: piToDegrees(100))
+        .animate(CurvedAnimation(
+      curve: Curves.linear,
+      parent: boxController,
+    ));
+
+    boxAnimation.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        boxController.repeat();
+      }
+    });
+
     catController = AnimationController(
       duration: Duration(
-        seconds: 2,
+        milliseconds: 200,
       ),
       vsync: this,
     );
 
-    catAnimation = Tween(begin: 0.0, end: 200.0).animate(
+    catAnimation = Tween(begin: -40.0, end: -80.0).animate(
       CurvedAnimation(
         parent: catController,
         curve: Curves.easeIn,
       ),
     );
+  }
+
+  Widget renderLeftBoxFlap() {
+    return Positioned(
+        left: 5,
+        child: AnimatedBuilder(
+            animation: boxAnimation,
+            child: Container(
+              width: 125,
+              height: 10,
+              color: Colors.brown,
+            ),
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: boxAnimation.value,
+                alignment: Alignment.topLeft,
+                child: child,
+              );
+            }));
+  }
+
+  Widget renderRightBoxFlap() {
+    return Positioned(
+        right: 5,
+        child: AnimatedBuilder(
+            animation: boxAnimation,
+            child: Container(
+              width: 125,
+              height: 10,
+              color: Colors.brown,
+            ),
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: boxAnimation.value,
+                alignment: Alignment.topLeft,
+                child: child,
+              );
+            }));
   }
 
   Widget renderCatAnimation() {
@@ -43,7 +110,9 @@ class AnimationScreenState extends State<AnimationScreen>
       builder: (context, child) {
         return Positioned(
           child: child,
-          bottom: catAnimation.value,
+          top: catAnimation.value,
+          right: 0,
+          left: 0,
         );
       },
       child: Cat(),
@@ -55,7 +124,7 @@ class AnimationScreenState extends State<AnimationScreen>
       child: Container(
         height: 200,
         width: 200,
-        color: Colors.brown[300],
+        color: Colors.brown,
       ),
       onTap: animateCat,
     );
@@ -68,9 +137,12 @@ class AnimationScreenState extends State<AnimationScreen>
       ),
       body: Center(
         child: Stack(
+          overflow: Overflow.visible,
           children: [
             renderCatAnimation(),
             renderBox(),
+            renderLeftBoxFlap(),
+            renderRightBoxFlap(),
           ],
         ),
       ),
